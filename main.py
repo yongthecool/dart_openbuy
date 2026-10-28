@@ -142,11 +142,31 @@ def run_daemon():
         time.sleep(CHECK_INTERVAL_SECONDS)
 
 
+def run_once():
+    """1회만 공시를 확인하고 종료합니다 (GitHub Actions 스케줄러용)."""
+    errors = validate_config()
+    if errors:
+        for err in errors:
+            logger.error(f"❌ 설정 오류: {err}")
+        sys.exit(1)
+
+    client = DartClient()
+    storage = ReportStorage()
+
+    logger.info("🔍 DART 당일 공개매수 공시 단일 점검을 실행합니다...")
+    sent_count = monitor_once(client, storage)
+    if sent_count > 0:
+        logger.info(f"📢 신규 공개매수 공시 {sent_count}건 발송 완료!")
+    else:
+        logger.info("신규 등록된 공개매수 공시가 없습니다.")
+
+
 def main():
     parser = argparse.ArgumentParser(description="DART 공개매수 실시간 텔레그램 알리미")
     parser.add_argument("--test-tg", action="store_true", help="텔레그램 발송 연동 테스트")
     parser.add_argument("--test-dart", action="store_true", help="최근 N일간 공개매수 공시 조회 테스트")
     parser.add_argument("--days", type=int, default=14, help="공시 조회 테스트 시 검색 기간(일수, 기본: 14일)")
+    parser.add_argument("--once", action="store_true", help="1회만 확인 후 즉시 종료 (스케줄러/GitHub Actions용)")
 
     args = parser.parse_args()
 
@@ -154,9 +174,12 @@ def main():
         run_test_telegram()
     elif args.test_dart:
         run_test_dart(days=args.days)
+    elif args.once:
+        run_once()
     else:
         run_daemon()
 
 
 if __name__ == "__main__":
     main()
+
