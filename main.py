@@ -1,8 +1,18 @@
 import argparse
+import io
 import logging
 import sys
 import time
 from datetime import datetime
+
+# Windows 콘솔 한글 깨짐 방지
+if sys.platform.startswith("win"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 
 from config import (
     CHECK_INTERVAL_SECONDS,
